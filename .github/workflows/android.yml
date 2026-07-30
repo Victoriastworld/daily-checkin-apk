@@ -17,15 +17,23 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '22'
-        cache: 'npm'
+    
+    - name: Debug - Check files
+      run: |
+        echo "=== Listing files ==="
+        ls -la
+        echo ""
+        echo "=== package.json ==="
+        cat package.json
+        echo ""
+        echo "=== src files ==="
+        ls -la src/
     
     - name: Install npm dependencies
-      run: npm ci
+      run: npm install
     
     - name: Build web app
       run: npm run build
-      env:
-        NODE_OPTIONS: '--max-old-space-size=4096'
     
     - name: Add Android platform
       run: npx cap add android
