@@ -17,12 +17,15 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '22'
+        cache: 'npm'
     
     - name: Install npm dependencies
-      run: npm install
+      run: npm ci
     
     - name: Build web app
       run: npm run build
+      env:
+        NODE_OPTIONS: '--max-old-space-size=4096'
     
     - name: Add Android platform
       run: npx cap add android
