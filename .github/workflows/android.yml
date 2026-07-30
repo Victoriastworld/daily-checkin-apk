@@ -18,37 +18,29 @@ jobs:
       with:
         node-version: '20'
     
-    - name: Verify project structure
-      run: |
-        ls -la
-        cat package.json
-        ls -la android/ || echo "android folder does not exist"
-    
     - name: Install dependencies
       run: npm install
     
-    - name: Verify after install
+    - name: Check android folder
       run: |
-        ls -la
-        ls -la node_modules/ | head -20
+        echo "=== Checking android folder ==="
+        ls -la android/
+        ls -la android/app/
     
     - name: Build web app
       run: npm run build
     
     - name: Sync to Android
-      run: |
-        ls -la
-        npx cap sync android
+      run: npx cap sync android
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v2
     
     - name: Build APK
       run: |
-        ls -la android/app/src/main/assets/
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
