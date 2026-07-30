@@ -21,32 +21,19 @@ jobs:
     - name: Install dependencies
       run: npm install
     
-    - name: Verify Capacitor CLI
-      run: |
-        echo "=== Checking capacitor CLI ==="
-        npx cap --version || npm list @capacitor/cli
-    
     - name: Build web app
       run: npm run build
     
-    - name: Verify dist folder
-      run: |
-        echo "=== Checking dist folder ==="
-        ls -la dist/ || echo "dist folder not found"
-        cat dist/index.html 2>/dev/null || echo "No index.html"
-    
-    - name: Sync to Android
-      run: |
-        echo "=== Syncing to Android ==="
-        npx cap sync android
-    
-    - name: Verify sync result
-      run: |
-        echo "=== Checking android assets ==="
-        ls -la android/app/src/main/assets/public/ || echo "assets not found"
-    
     - name: Setup Android SDK
       uses: android-actions/setup-android@v2
+    
+    - name: Add Android platform
+      run: |
+        rm -rf android 2>/dev/null || true
+        npx cap add android
+    
+    - name: Sync to Android
+      run: npx cap sync android
     
     - name: Build APK
       run: |
