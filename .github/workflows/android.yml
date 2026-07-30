@@ -27,13 +27,9 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v2
     
-    - name: Add Android platform
-      run: |
-        rm -rf android 2>/dev/null || true
-        npx cap add android
-    
     - name: Sync to Android
-      run: npx cap sync android
+      run: |
+        echo "Y" | npx cap sync android
     
     - name: Build APK
       run: |
