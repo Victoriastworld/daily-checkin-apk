@@ -19,7 +19,6 @@ jobs:
     
     - name: Install dependencies
       run: |
-        cd checkin-apk
         npm install
         npx cap sync android
     
@@ -28,7 +27,7 @@ jobs:
     
     - name: Build APK
       run: |
-        cd checkin-apk/android
+        cd android
         chmod +x gradlew
         ./gradlew assembleRelease
     
@@ -36,4 +35,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: daily-checkin-apk
-        path: checkin-apk/android/app/build/outputs/apk/release/app-release.apk
+        path: android/app/build/outputs/apk/release/app-release.apk
