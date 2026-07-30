@@ -21,39 +21,35 @@ jobs:
     - name: Install dependencies
       run: npm install
     
-    - name: Check project structure
+    - name: Verify Capacitor CLI
       run: |
-        echo "=== Project Structure ==="
-        ls -la
-        echo ""
-        echo "=== Package.json ==="
-        cat package.json
-        echo ""
-        echo "=== Android folder ==="
-        ls -la android/ || echo "android folder not found"
+        echo "=== Checking capacitor CLI ==="
+        npx cap --version || npm list @capacitor/cli
     
     - name: Build web app
       run: npm run build
     
-    - name: Sync to Android (with debug)
+    - name: Verify dist folder
       run: |
         echo "=== Checking dist folder ==="
-        ls -la dist/
-        echo ""
-        echo "=== Running cap sync ==="
-        npx cap sync android 2>&1 || {
-          echo "=== Cap sync failed, exit code: $? ==="
-          cat capacitor.config.ts 2>/dev/null || echo "No capacitor.config.ts found"
-          exit 1
-        }
+        ls -la dist/ || echo "dist folder not found"
+        cat dist/index.html 2>/dev/null || echo "No index.html"
+    
+    - name: Sync to Android
+      run: |
+        echo "=== Syncing to Android ==="
+        npx cap sync android
+    
+    - name: Verify sync result
+      run: |
+        echo "=== Checking android assets ==="
+        ls -la android/app/src/main/assets/public/ || echo "assets not found"
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v2
     
     - name: Build APK
       run: |
-        echo "=== Assets folder ==="
-        ls -la android/app/src/main/assets/
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug --no-daemon
