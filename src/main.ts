@@ -45,10 +45,6 @@ class CheckInApp {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }
 
-  private getMonthString(date: Date): string {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-  }
-
   private loadState(): void {
     const savedRecords = localStorage.getItem('checkInRecords');
     if (savedRecords) {
@@ -85,7 +81,6 @@ class CheckInApp {
   }
 
   private checkMissedDays(): void {
-    const today = this.getTodayString();
     const yesterday = this.getYesterdayString();
     
     // 检查昨天是否打卡或请假
@@ -161,8 +156,7 @@ class CheckInApp {
   }
 
   private scheduleReminder(duration: number): void {
-    // 使用setTimeout模拟提醒（实际应用中需要Service Worker）
-    const reminderTime = 60 * 60 * 1000; // 1小时
+    // 使用setTimeout模拟提醒
     const durationMs = duration * 60 * 60 * 1000;
     
     // 存储下次提醒时间
@@ -230,14 +224,6 @@ class CheckInApp {
     }
     
     return 'none';
-  }
-
-  private hasAbsenceReason(dateStr: string): boolean {
-    return this.state.absences.some(a => a.date === dateStr);
-  }
-
-  private getAbsenceInfo(dateStr: string): AbsenceRecord | undefined {
-    return this.state.absences.find(a => a.date === dateStr);
   }
 
   private render(): void {
@@ -364,7 +350,6 @@ class CheckInApp {
       
       const status = this.getDayStatus(day);
       const isToday = day === this.getTodayString();
-      const absenceInfo = this.getAbsenceInfo(day);
       
       let className = 'calendar-day';
       if (isToday) className += ' today';
@@ -388,7 +373,6 @@ class CheckInApp {
     const clearBtn = document.getElementById('clearBtn');
     const prevMonth = document.getElementById('prevMonth');
     const nextMonth = document.getElementById('nextMonth');
-    const modal = document.getElementById('modal');
     const closeModal = document.getElementById('closeModal');
     const btnLeave = document.getElementById('btnLeave');
     const btnOther = document.getElementById('btnOther');
@@ -447,9 +431,6 @@ class CheckInApp {
     
     // 如果已经有记录或请假，显示详情
     if (status === 'checked' || status === 'leave') {
-      const info = status === 'checked' 
-        ? this.state.records.find(r => r.date === dateStr)
-        : this.state.absences.find(a => a.date === dateStr);
       alert(`日期: ${dateStr}\n类型: ${status === 'checked' ? '已打卡' : '请假'}`);
       return;
     }
