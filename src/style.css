@@ -12,6 +12,69 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* 登录页面 */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px 30px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.login-box h1 {
+  color: #667eea;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.login-subtitle {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.login-box input:focus {
+  border-color: #667eea;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.login-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
 .container {
   max-width: 480px;
   margin: 0 auto;
@@ -22,12 +85,38 @@ body {
   margin-bottom: 24px;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .header h1 {
   color: white;
   font-size: 28px;
   font-weight: 600;
-  margin-bottom: 8px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.logout-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.user-info {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  margin-bottom: 4px;
 }
 
 .header .date {
@@ -548,6 +637,53 @@ body {
 
 .close-btn:hover {
   background: #e0e0e0;
+}
+
+/* 倒计时样式 */
+.countdown-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.countdown-title {
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.countdown-timer {
+  font-size: 36px;
+  font-weight: 700;
+  color: #667eea;
+  font-family: 'Courier New', monospace;
+}
+
+.countdown-timer.warning {
+  color: #ff9800;
+}
+
+.countdown-timer.danger {
+  color: #f44336;
+}
+
+.countdown-progress {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.countdown-progress-bar {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+  transition: width 1s linear;
 }
 
 @media (max-width: 480px) {
