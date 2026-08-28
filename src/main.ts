@@ -1,6 +1,9 @@
 // @ts-nocheck
 import './style.css';
 
+// 当前版本号 — 每次发布更新时手动改这里
+const CURRENT_VERSION = 'v38';
+
 const APP_HTML = `
 <div class="container">
 <header>
@@ -120,6 +123,13 @@ const APP_HTML = `
   </div>
 
   <div id="manageList"></div>
+
+  <div class="add-task-form" style="margin-top:24px;">
+    <h3>🔄 检查更新</h3>
+    <p style="color:#6e6358;font-size:13px;margin-bottom:12px;">当前版本: <strong id="currentVersion">${CURRENT_VERSION}</strong></p>
+    <button data-action="checkUpdate" style="background:#8b3a2f;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-size:14px;font-family:inherit;width:100%;">🔍 检查最新版本</button>
+    <p style="color:#888;font-size:11px;margin-top:10px;line-height:1.6;">提示：打开 app 后点此按钮，有新版本会提示你去下载。下载后 Android 会自动覆盖安装，任务数据不会丢失。</p>
+  </div>
 </div>
 
 </div>
@@ -130,6 +140,16 @@ const APP_HTML = `
     <div class="modal-detail" id="modalDetail"></div>
     <div class="resource-block" id="modalResource"></div>
     <button class="modal-close" data-action="closeModal">关闭</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="updateModal">
+  <div class="modal">
+    <h3 id="updateModalTitle">发现新版本</h3>
+    <div class="modal-detail" id="updateModalDetail"></div>
+    <div class="resource-block" id="updateModalNotes" style="max-height:200px;overflow-y:auto;"></div>
+    <button class="modal-close" data-action="downloadUpdate">去下载新版本</button>
+    <button data-action="closeUpdateModal" style="background:#888;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;width:100%;margin-top:8px;">稍后再说</button>
   </div>
 </div>
 `;
@@ -150,6 +170,8 @@ let timerMode: 'work' | 'break' = 'work';
 let timerRunning = false;
 let pomodoroStats: any = JSON.parse(localStorage.getItem('pomodoro_stats') || '{"today":{},"total":{"count":0,"minutes":0}}');
 
+let latestReleaseUrl: string | null = null;
+
 function initData() {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) return JSON.parse(stored);
@@ -168,6 +190,12 @@ function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(allData))
 
 function formatDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
+function compareVersion(a: string, b: string): number {
+  const av = parseInt(a.replace(/^v/i, '')) || 0;
+  const bv = parseInt(b.replace(/^v/i, '')) || 0;
+  return av - bv;
 }
 
 function generateTasksForDate(date: Date) {
@@ -217,7 +245,7 @@ function generateTasksForDate(date: Date) {
       { cat: '⭐ 本周特别任务', name: '注册小红书+B站账号', detail: '关注"上外汉硕"', quantity: '10分钟', catName: '注册账号',
         resources: '📱 小红书搜"上外汉硕"关注10个博主\n🎬 B站关注3个考研UP主\n💬 考研帮App注册' },
       { cat: '⭐ 本周特别任务', name: '找1位上岸学长学姐', detail: '小红书私信', quantity: '30分钟', catName: '找人脉',
-        resources: '📱 小红书私信"上外汉硕在读"\n📱 QQ群搜"上外考研2023"\n📱微信搜"上外汉硕考研"' },
+        resources: '📱 小红书私信"上外汉硕在读"\n📱 QQ群搜"上外考研2027"\n📱 微信搜"上外汉硕考研"' },
       { cat: '⭐ 本周特别任务', name: '跟父母深谈一次', detail: '告诉他们你的考研计划', quantity: '60分钟', catName: '家庭沟通',
         resources: '👨‍👩‍👧 准备:打印Excel规划表\n💬 说清5年规划和转段考核\n🤝 寻求家庭支持' }
     ];
@@ -579,6 +607,51 @@ function renderManage() {
   container.innerHTML = html;
 }
 
+// ============ 检查更新 ============
+async function checkUpdate() {
+  const btn = document.querySelector<HTMLButtonElement>('[data-action="checkUpdate"]')!;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ 正在检查...';
+
+  try {
+    const response = await fetch('https://api.github.com/repos/Victoriastworld/daily-checkin-apk/releases/latest');
+    if (!response.ok) throw new Error('网络错误');
+    const release = await response.json();
+    const latestTag = release.tag_name || '';
+    const apkAsset = (release.assets || []).find((a: any) => a.name && a.name.toLowerCase().endsWith('.apk'));
+    const htmlUrl = release.html_url || '';
+    const body = release.body || '无更新说明';
+
+    if (compareVersion(latestTag, CURRENT_VERSION) > 0) {
+      latestReleaseUrl = htmlUrl;
+      document.getElementById('updateModalTitle')!.textContent = `发现新版本 ${latestTag}`;
+      document.getElementById('updateModalDetail')!.textContent =
+        `当前版本: ${CURRENT_VERSION} → 新版本: ${latestTag}` + (apkAsset ? ` (${(apkAsset.size/1024/1024).toFixed(1)} MB)` : '');
+      document.getElementById('updateModalNotes')!.textContent = body;
+      document.getElementById('updateModal')!.classList.add('show');
+    } else {
+      alert(`✓ 已是最新版本 (${CURRENT_VERSION})`);
+    }
+  } catch (err: any) {
+    alert('检查更新失败：' + (err.message || '网络问题') + '\n\n请检查网络后重试，或直接访问 GitHub Releases 页面。');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+function downloadUpdate() {
+  if (latestReleaseUrl) {
+    window.open(latestReleaseUrl, '_blank');
+    document.getElementById('updateModal')!.classList.remove('show');
+  }
+}
+
+function closeUpdateModal() {
+  document.getElementById('updateModal')!.classList.remove('show');
+}
+
 // ============ Tab 切换 ============
 function switchTab(tabName: string) {
   document.querySelectorAll<HTMLElement>('.tab').forEach(t => t.classList.remove('active'));
@@ -627,10 +700,12 @@ document.addEventListener('click', (e) => {
     case 'setWorkMinutes': setWorkMinutes(min); break;
     case 'addTask': addTask(); break;
     case 'closeModal': closeModal(); break;
+    case 'checkUpdate': checkUpdate(); break;
+    case 'downloadUpdate': downloadUpdate(); break;
+    case 'closeUpdateModal': closeUpdateModal(); break;
   }
 });
 
-// Tab 切换事件
 document.querySelectorAll<HTMLElement>('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
     const tab = btn.dataset.tab;
@@ -638,12 +713,14 @@ document.querySelectorAll<HTMLElement>('.tab').forEach(btn => {
   });
 });
 
-// 弹窗外点击关闭
 document.getElementById('resourceModal')!.addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeModal();
 });
 
-// 检查旧版本
+document.getElementById('updateModal')!.addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeUpdateModal();
+});
+
 setTimeout(() => {
   const hasAnyResource = Object.values(allData.tasks).some((dayTasks: any) =>
     dayTasks.some((t: any) => t.resources)
