@@ -98,10 +98,10 @@ class CheckInApp {
 
   private checkMissedDays(): void {
     const yesterday = this.getYesterdayString();
-    
+
     const checkedInYesterday = this.state.records.some(r => r.date === yesterday);
     const onLeaveYesterday = this.state.absences.some(a => a.date === yesterday && a.reason === 'leave');
-    
+
     if (!checkedInYesterday && !onLeaveYesterday) {
       const otherAbsenceYesterday = this.state.absences.find(a => a.date === yesterday && a.reason === 'other');
       if (otherAbsenceYesterday) {
@@ -125,30 +125,30 @@ class CheckInApp {
 
   private getStreakDays(): number {
     if (this.state.records.length === 0) return 0;
-    
-    const sortedRecords = [...this.state.records].sort((a, b) => 
+
+    const sortedRecords = [...this.state.records].sort((a, b) =>
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-    
+
     let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     for (let i = 0; i < sortedRecords.length; i++) {
       const recordDate = new Date(sortedRecords[i].date);
       recordDate.setHours(0, 0, 0, 0);
-      
+
       const expectedDate = new Date(today);
       expectedDate.setDate(expectedDate.getDate() - i);
       expectedDate.setHours(0, 0, 0, 0);
-      
+
       if (recordDate.getTime() === expectedDate.getTime()) {
         streak++;
       } else {
         break;
       }
     }
-    
+
     return streak;
   }
 
@@ -170,13 +170,13 @@ class CheckInApp {
 
   private scheduleReminder(duration: number): void {
     const durationMs = duration * 60 * 60 * 1000;
-    
+
     const nextReminder = new Date(Date.now() + durationMs);
     localStorage.setItem('nextReminder', nextReminder.toISOString());
     localStorage.setItem('reminderDuration', duration.toString());
-    
+
     setTimeout(() => {
-      this.showNotification(`打卡提醒`, `您已完成${duration}小时打卡！`);
+      this.showNotification(`Future 打卡提醒`, `您已完成${duration}小时打卡！`);
     }, durationMs);
   }
 
@@ -184,7 +184,7 @@ class CheckInApp {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(title, { body, icon: '/vite.svg' });
     }
-    
+
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: 'SHOW_NOTIFICATION',
@@ -199,18 +199,18 @@ class CheckInApp {
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startDayOfWeek = firstDay.getDay();
-    
+
     const days: (string | null)[] = [];
-    
+
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     for (let i = 1; i <= daysInMonth; i++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       days.push(dateStr);
     }
-    
+
     return days;
   }
 
@@ -218,29 +218,28 @@ class CheckInApp {
     const today = this.getTodayString();
     const todayDate = new Date(today);
     const checkDate = new Date(dateStr);
-    
+
     if (checkDate > todayDate) return 'future';
-    
+
     if (this.state.records.some(r => r.date === dateStr)) return 'checked';
     if (this.state.absences.some(a => a.date === dateStr && a.reason === 'leave')) return 'leave';
-    
+
     if (checkDate < todayDate) {
       const hasAbsence = this.state.absences.find(a => a.date === dateStr);
       if (hasAbsence && hasAbsence.reason === 'other') return 'missed';
     }
-    
+
     return 'none';
   }
 
   private render(): void {
     const app = document.getElementById('app')!;
-    
-    // 如果未登录，显示登录界面
+
     if (!this.state.user || !this.state.user.isLoggedIn) {
       app.innerHTML = `
         <div class="login-container">
           <div class="login-box">
-            <h1>每日打卡</h1>
+            <h1>Future</h1>
             <p class="login-subtitle">请先登录</p>
             <form id="loginForm">
               <input type="text" id="username" placeholder="请输入用户名" required />
@@ -252,23 +251,23 @@ class CheckInApp {
       this.attachLoginListeners();
       return;
     }
-    
+
     const todayCheckIn = this.getTodayCheckIn();
     const hasCheckedIn = !!todayCheckIn;
     const streak = this.getStreakDays();
     const totalDays = this.state.records.length;
-    
+
     app.innerHTML = `
       <div class="container">
         <header class="header">
           <div class="header-top">
-            <h1>每日打卡</h1>
+            <h1>Future</h1>
             <button id="logoutBtn" class="logout-btn">退出</button>
           </div>
           <p class="user-info">欢迎，${this.state.user.username}</p>
           <p class="date">${this.getTodayString()}</p>
         </header>
-        
+
         <div class="stats">
           <div class="stat-card">
             <div class="stat-value">${streak}</div>
@@ -283,7 +282,7 @@ class CheckInApp {
             <div class="stat-label">待完成时长</div>
           </div>
         </div>
-        
+
         <div class="checkin-section">
           ${hasCheckedIn ? `
             <div class="checked-in">
@@ -313,7 +312,7 @@ class CheckInApp {
             </div>
           `}
         </div>
-        
+
         <div class="calendar-section">
           <div class="calendar-header">
             <button id="prevMonth" class="month-nav">&lt;</button>
@@ -332,7 +331,7 @@ class CheckInApp {
             <span class="legend-item"><span class="dot missed"></span>未打卡</span>
           </div>
         </div>
-        
+
         <div class="records-section">
           <h2>打卡记录</h2>
           <div class="records-list" id="recordsList">
@@ -350,12 +349,12 @@ class CheckInApp {
               `).join('')}
           </div>
         </div>
-        
+
         ${this.state.records.length > 0 ? `
           <button id="clearBtn" class="clear-btn">清除所有记录</button>
         ` : ''}
       </div>
-      
+
       <div id="modal" class="modal" style="display:none;">
         <div class="modal-content">
           <h3 id="modalTitle">选择原因</h3>
@@ -372,7 +371,7 @@ class CheckInApp {
         </div>
       </div>
     `;
-    
+
     this.attachEventListeners();
   }
 
@@ -380,17 +379,17 @@ class CheckInApp {
     const year = this.state.currentMonth.getFullYear();
     const month = this.state.currentMonth.getMonth();
     const days = this.getMonthDays(year, month);
-    
+
     return days.map(day => {
       if (!day) return '<div class="calendar-day empty"></div>';
-      
+
       const status = this.getDayStatus(day);
       const isToday = day === this.getTodayString();
-      
+
       let className = 'calendar-day';
       if (isToday) className += ' today';
       className += ` ${status}`;
-      
+
       const dayNum = new Date(day).getDate();
       let content = `<span class="day-number">${dayNum}</span>`;
       if (status === 'checked') {
@@ -400,7 +399,7 @@ class CheckInApp {
       } else if (status === 'missed') {
         content += '<span class="day-missed">缺</span>';
       }
-      
+
       return `<div class="${className}" data-date="${day}">${content}</div>`;
     }).join('');
   }
@@ -420,271 +419,3 @@ class CheckInApp {
       });
     }
   }
-
-  private attachEventListeners(): void {
-    const logoutBtn = document.getElementById('logoutBtn');
-    const checkinBtn = document.getElementById('checkinBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const prevMonth = document.getElementById('prevMonth');
-    const nextMonth = document.getElementById('nextMonth');
-    const closeModal = document.getElementById('closeModal');
-    const btnLeave = document.getElementById('btnLeave');
-    const btnOther = document.getElementById('btnOther');
-    const saveReason = document.getElementById('saveReason');
-    
-    const todayCheckIn = this.getTodayCheckIn();
-    const hasCheckedIn = !!todayCheckIn;
-    
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => this.handleLogout());
-    }
-    
-    if (checkinBtn) {
-      checkinBtn.addEventListener('click', () => this.handleCheckIn());
-    }
-    
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => this.handleClear());
-    }
-    
-    if (prevMonth) {
-      prevMonth.addEventListener('click', () => this.changeMonth(-1));
-    }
-    
-    if (nextMonth) {
-      nextMonth.addEventListener('click', () => this.changeMonth(1));
-    }
-    
-    if (closeModal) {
-      closeModal.addEventListener('click', () => this.closeModal());
-    }
-    
-    if (btnLeave) {
-      btnLeave.addEventListener('click', () => this.handleLeave());
-    }
-    
-    if (btnOther) {
-      btnOther.addEventListener('click', () => this.showOtherReasonSection());
-    }
-    
-    if (saveReason) {
-      saveReason.addEventListener('click', () => this.saveOtherReason());
-    }
-    
-    // 启动倒计时
-    if (hasCheckedIn && todayCheckIn) {
-      this.startCountdown(todayCheckIn);
-    }
-    
-    document.querySelectorAll('.calendar-day:not(.empty)').forEach(day => {
-      day.addEventListener('click', (e) => {
-        const dateStr = (e.currentTarget as HTMLElement).dataset.date;
-        if (dateStr) this.handleDayClick(dateStr);
-      });
-    });
-  }
-
-  private handleLogout(): void {
-    if (confirm('确定要退出登录吗？')) {
-      this.state.user = null;
-      this.saveState();
-      this.render();
-    }
-  }
-
-  private handleDayClick(dateStr: string): void {
-    const today = this.getTodayString();
-    const dayDate = new Date(dateStr);
-    const todayDate = new Date(today);
-    
-    if (dayDate >= todayDate) return;
-    
-    const status = this.getDayStatus(dateStr);
-    
-    if (status === 'checked' || status === 'leave') {
-      alert(`日期: ${dateStr}\n类型: ${status === 'checked' ? '已打卡' : '请假'}`);
-      return;
-    }
-    
-    if (status === 'missed' || status === 'none') {
-      this.openModal(dateStr);
-    }
-  }
-
-  private openModal(dateStr: string): void {
-    const modal = document.getElementById('modal');
-    const modalDate = document.getElementById('modalDate');
-    const otherSection = document.getElementById('otherReasonSection');
-    const reasonInput = document.getElementById('reasonInput') as HTMLTextAreaElement;
-    
-    if (modal) modal.style.display = 'flex';
-    if (modalDate) modalDate.textContent = dateStr;
-    if (otherSection) otherSection.style.display = 'none';
-    if (reasonInput) reasonInput.value = '';
-    
-    (window as any).currentModalDate = dateStr;
-  }
-
-  private closeModal(): void {
-    const modal = document.getElementById('modal');
-    if (modal) modal.style.display = 'none';
-  }
-
-  private handleLeave(): void {
-    const dateStr = (window as any).currentModalDate;
-    if (!dateStr) return;
-    
-    const absence: AbsenceRecord = {
-      date: dateStr,
-      reason: 'leave'
-    };
-    
-    this.state.absences.push(absence);
-    this.saveState();
-    this.closeModal();
-    this.render();
-  }
-
-  private showOtherReasonSection(): void {
-    const otherSection = document.getElementById('otherReasonSection');
-    if (otherSection) otherSection.style.display = 'block';
-  }
-
-  private saveOtherReason(): void {
-    const dateStr = (window as any).currentModalDate;
-    const reasonInput = document.getElementById('reasonInput') as HTMLTextAreaElement;
-    
-    if (!dateStr || !reasonInput?.value.trim()) {
-      alert('请输入原因');
-      return;
-    }
-    
-    const absence: AbsenceRecord = {
-      date: dateStr,
-      reason: 'other',
-      description: reasonInput.value.trim()
-    };
-    
-    this.state.absences.push(absence);
-    this.state.missedDays++;
-    this.state.pendingDuration = this.calculatePendingDuration();
-    this.saveState();
-    this.closeModal();
-    this.render();
-  }
-
-  private changeMonth(delta: number): void {
-    this.state.currentMonth.setMonth(this.state.currentMonth.getMonth() + delta);
-    this.render();
-  }
-
-  private handleCheckIn(): void {
-    const noteInput = document.getElementById('noteInput') as HTMLInputElement;
-    const note = noteInput?.value.trim() || '';
-    
-    const now = new Date();
-    const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-    
-    const record: CheckInRecord = {
-      date: this.getTodayString(),
-      time,
-      note,
-      count: this.state.records.length + 1,
-      duration: this.state.pendingDuration
-    };
-    
-    this.state.records.push(record);
-    this.state.lastCheckInTime = now;
-    this.state.missedDays = 0;
-    this.state.pendingDuration = 1;
-    
-    this.saveState();
-    this.scheduleReminder(record.duration || 1);
-    this.render();
-    
-    alert(`打卡成功！完成时长: ${record.duration}小时\n将在${record.duration}小时后提醒您`);
-  }
-
-  private startCountdown(checkIn: CheckInRecord): void {
-    const duration = checkIn.duration || 1;
-    const now = new Date();
-    const checkInTime = new Date(checkIn.date + ' ' + checkIn.time);
-    
-    this.checkInTimestamp = checkInTime.getTime();
-    this.targetDuration = duration * 60 * 60 * 1000;
-    
-    const endTime = this.checkInTimestamp + this.targetDuration;
-    const remaining = endTime - now.getTime();
-    
-    if (remaining > 0) {
-      this.updateCountdown(remaining);
-      this.countdownTimer = window.setInterval(() => {
-        const now2 = new Date();
-        const remaining2 = endTime - now2.getTime();
-        if (remaining2 <= 0) {
-          this.stopCountdown();
-          this.showNotification('打卡完成', '恭喜！您已完成今日打卡任务！');
-        } else {
-          this.updateCountdown(remaining2);
-        }
-      }, 1000);
-    } else {
-      const timer = document.getElementById('countdownTimer');
-      if (timer) timer.textContent = '已完成!';
-    }
-  }
-
-  private updateCountdown(remaining: number): void {
-    const timer = document.getElementById('countdownTimer');
-    const progress = document.getElementById('countdownProgress');
-    
-    if (!timer || !progress) return;
-    
-    const hours = Math.floor(remaining / (60 * 60 * 1000));
-    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-    const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
-    
-    timer.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    
-    const elapsed = this.targetDuration - remaining;
-    const percent = (elapsed / this.targetDuration) * 100;
-    progress.style.width = `${100 - percent}%`;
-    
-    if (hours < 1) {
-      timer.className = 'countdown-timer danger';
-    } else if (hours < 2) {
-      timer.className = 'countdown-timer warning';
-    } else {
-      timer.className = 'countdown-timer';
-    }
-  }
-
-  private stopCountdown(): void {
-    if (this.countdownTimer) {
-      clearInterval(this.countdownTimer);
-      this.countdownTimer = null;
-    }
-    const timer = document.getElementById('countdownTimer');
-    const progress = document.getElementById('countdownProgress');
-    if (timer) timer.textContent = '已完成!';
-    if (progress) progress.style.width = '0%';
-  }
-
-  private handleClear(): void {
-    if (confirm('确定要清除所有打卡记录吗？')) {
-      this.state.records = [];
-      this.state.absences = [];
-      this.state.missedDays = 0;
-      this.state.pendingDuration = 1;
-      this.state.lastCheckInTime = undefined;
-      this.saveState();
-      this.render();
-    }
-  }
-
-  private init(): void {
-    this.render();
-  }
-}
-
-new CheckInApp();
