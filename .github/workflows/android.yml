@@ -42,20 +42,21 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleDebug
 
-    - name: Rename APK to Future.apk
-      run: cp android/app/build/outputs/apk/debug/app-debug.apk Future.apk
-
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: Future
-        path: Future.apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
 
-    - name: Deploy APK to GitHub Pages (public download)
-      uses: peaceiris/actions-gh-pages@v3
+    - name: Copy APK to public dir
+      run: mkdir -p public && cp android/app/build/outputs/apk/debug/app-debug.apk public/Future.apk
+
+    - name: Deploy APK to gh-pages
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: .
+        publish_dir: ./public
         publish_branch: gh-pages
-        keep_files: true
-        exclude_assets: ''
+        user_name: github-actions[bot]
+        user_email: github-actions[bot]@users.noreply.github.com
+        commit_message: 'Deploy Future APK'
