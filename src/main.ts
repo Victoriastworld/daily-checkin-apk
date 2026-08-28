@@ -419,3 +419,270 @@ class CheckInApp {
       });
     }
   }
+
+  private attachEventListeners(): void {
+    const logoutBtn = document.getElementById('logoutBtn');
+    const checkinBtn = document.getElementById('checkinBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const prevMonth = document.getElementById('prevMonth');
+    const nextMonth = document.getElementById('nextMonth');
+    const closeModal = document.getElementById('closeModal');
+    const btnLeave = document.getElementById('btnLeave');
+    const btnOther = document.getElementById('btnOther');
+    const saveReason = document.getElementById('saveReason');
+
+    const todayCheckIn = this.getTodayCheckIn();
+    const hasCheckedIn = !!todayCheckIn;
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => this.handleLogout());
+    }
+
+    if (checkinBtn) {
+      checkinBtn.addEventListener('click', () => this.handleCheckIn());
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => this.handleClear());
+    }
+
+    if (prevMonth) {
+      prevMonth.addEventListener('click', () => this.changeMonth(-1));
+    }
+
+    if (nextMonth) {
+      nextMonth.addEventListener('click', () => this.changeMonth(1));
+    }
+
+    if (closeModal) {
+      closeModal.addEventListener('click', () => this.closeModal());
+    }
+
+    if (btnLeave) {
+      btnLeave.addEventListener('click', () => this.handleLeave());
+    }
+
+    if (btnOther) {
+      btnOther.addEventListener('click', () => this.showOtherReasonSection());
+    }
+
+    if (saveReason) {
+      saveReason.addEventListener('click', () => this.saveOtherReason());
+    }
+
+    if (hasCheckedIn && todayCheckIn) {
+      this.startCountdown(todayCheckIn);
+    }
+
+    document.querySelectorAll('.calendar-day:not(.empty)').forEach(day => {
+      day.addEventListener('click', (e) => {
+        const dateStr = (e.currentTarget as HTMLElement).dataset.date;
+        if (dateStr) this.handleDayClick(dateStr);
+      });
+    });
+  }
+
+  private handleLogout(): void {
+    if (confirm('确定要退出登录吗？')) {
+      this.state.user = null;
+      this.saveState();
+      this.render();
+    }
+  }
+
+  private handleDayClick(dateStr: string): void {
+    const today = this.getTodayString();
+    const dayDate = new Date(dateStr);
+    const todayDate = new Date(today);
+
+    if (dayDate >= todayDate) return;
+
+    const status = this.getDayStatus(dateStr);
+
+    if (status === 'checked' || status === 'leave') {
+      alert(`日期: ${dateStr}\n类型: ${status === 'checked' ? '已打卡' : '请假'}`);
+      return;
+    }
+
+    if (status === 'missed' || status === 'none') {
+      this.openModal(dateStr);
+    }
+  }
+
+  private openModal(dateStr: string): void {
+    const modal = document.getElementById('modal');
+    const modalDate = document.getElementById('modalDate');
+    const otherSection = document.getElementById('otherReasonSection');
+    const reasonInput = document.getElementById('reasonInput') as HTMLTextAreaElement;
+
+    if (modal) modal.style.display = 'flex';
+    if (modalDate) modalDate.textContent = dateStr;
+    if (otherSection) otherSection.style.display = 'none';
+    if (reasonInput) reasonInput.value = '';
+
+    (window as any).currentModalDate = dateStr;
+  }
+
+  private closeModal(): void {
+    const modal = document.getElementById('modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  private handleLeave(): void {
+    const dateStr = (window as any).currentModalDate;
+    if (!dateStr) return;
+
+    const absence: AbsenceRecord = {
+      date: dateStr,
+      reason: 'leave'
+    };
+
+    this.state.absences.push(absence);
+    this.saveState();
+    this.closeModal();
+    this.render();
+  }
+
+  private showOtherReasonSection(): void {
+    const otherSection = document.getElementById('otherReasonSection');
+    if (otherSection) otherSection.style.display = 'block';
+  }
+
+  private saveOtherReason(): void {
+    const dateStr = (window as any).currentModalDate;
+    const reasonInput = document.getElementById('reasonInput') as HTMLTextAreaElement;
+
+    if (!dateStr || !reasonInput?.value.trim()) {
+      alert('请输入原因');
+      return;
+    }
+
+    const absence: AbsenceRecord = {
+      date: dateStr,
+      reason: 'other',
+      description: reasonInput.value.trim()
+    };
+
+    this.state.absences.push(absence);
+    this.state.missedDays++;
+    this.state.pendingDuration = this.calculatePendingDuration();
+    this.saveState();
+    this.closeModal();
+    this.render();
+  }
+
+  private changeMonth(delta: number): void {
+    this.state.currentMonth.setMonth(this.state.currentMonth.getMonth() + delta);
+    this.render();
+  }
+
+  private handleCheckIn(): void {
+    const noteInput = document.getElementById('noteInput') as HTMLInputElement;
+    const note = noteInput?.value.trim() || '';
+
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+    const record: CheckInRecord = {
+      date: this.getTodayString(),
+      time,
+      note,
+      count: this.state.records.length + 1,
+      duration: this.state.pendingDuration
+    };
+
+    this.state.records.push(record);
+    this.state.lastCheckInTime = now;
+    this.state.missedDays = 0;
+    this.state.pendingDuration = 1;
+
+    this.saveState();
+    this.scheduleReminder(record.duration || 1);
+    this.render();
+
+    alert(`打卡成功！完成时长: ${record.duration}小时\n将在${record.duration}小时后提醒您`);
+  }
+
+  private startCountdown(checkIn: CheckInRecord): void {
+    const duration = checkIn.duration || 1;
+    const now = new Date();
+    const checkInTime = new Date(checkIn.date + ' ' + checkIn.time);
+
+    this.checkInTimestamp = checkInTime.getTime();
+    this.targetDuration = duration * 60 * 60 * 1000;
+
+    const endTime = this.checkInTimestamp + this.targetDuration;
+    const remaining = endTime - now.getTime();
+
+    if (remaining > 0) {
+      this.updateCountdown(remaining);
+      this.countdownTimer = window.setInterval(() => {
+        const now2 = new Date();
+        const remaining2 = endTime - now2.getTime();
+        if (remaining2 <= 0) {
+          this.stopCountdown();
+          this.showNotification('打卡完成', '恭喜！您已完成今日打卡任务！');
+        } else {
+          this.updateCountdown(remaining2);
+        }
+      }, 1000);
+    } else {
+      const timer = document.getElementById('countdownTimer');
+      if (timer) timer.textContent = '已完成!';
+    }
+  }
+
+  private updateCountdown(remaining: number): void {
+    const timer = document.getElementById('countdownTimer');
+    const progress = document.getElementById('countdownProgress');
+
+    if (!timer || !progress) return;
+
+    const hours = Math.floor(remaining / (60 * 60 * 1000));
+    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+    const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
+
+    timer.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+    const elapsed = this.targetDuration - remaining;
+    const percent = (elapsed / this.targetDuration) * 100;
+    progress.style.width = `${100 - percent}%`;
+
+    if (hours < 1) {
+      timer.className = 'countdown-timer danger';
+    } else if (hours < 2) {
+      timer.className = 'countdown-timer warning';
+    } else {
+      timer.className = 'countdown-timer';
+    }
+  }
+
+  private stopCountdown(): void {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+    const timer = document.getElementById('countdownTimer');
+    const progress = document.getElementById('countdownProgress');
+    if (timer) timer.textContent = '已完成!';
+    if (progress) progress.style.width = '0%';
+  }
+
+  private handleClear(): void {
+    if (confirm('确定要清除所有打卡记录吗？')) {
+      this.state.records = [];
+      this.state.absences = [];
+      this.state.missedDays = 0;
+      this.state.pendingDuration = 1;
+      this.state.lastCheckInTime = undefined;
+      this.saveState();
+      this.render();
+    }
+  }
+
+  private init(): void {
+    this.render();
+  }
+}
+
+new CheckInApp();
