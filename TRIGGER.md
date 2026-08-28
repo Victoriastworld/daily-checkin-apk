@@ -1,3 +1,3 @@
 # Build trigger
 
-Rebuild red 4-tab Future UI.
+v38 with in-app update checker.
