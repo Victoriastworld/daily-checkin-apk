@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.future.checkin',
+  appId: 'com.daily.checkin',
   appName: 'Future',
   webDir: 'dist'
 };
